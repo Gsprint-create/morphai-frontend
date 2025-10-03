@@ -1,18 +1,38 @@
-/* Tailwind v3 directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Design tokens + small utilities */
-:root {
-  --muted: #69707a;
+/* 🔹 Custom reusable utilities */
+.input {
+  @apply w-full rounded-xl border border-black/10 bg-white/5 px-3 py-2 outline-none;
 }
 
-.card  { @apply rounded-2xl border border-black/10 bg-white/5 backdrop-blur p-4 shadow-sm; }
-.input { @apply w-full rounded-xl border border-black/10 bg-white/5 px-3 py-2 outline-none; }
-.btn   { @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-medium border border-black/10 hover:opacity-90; }
+.btn {
+  @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-medium 
+         border border-black/10 hover:opacity-90 transition;
+}
 
+/* 🔹 Global HTML + body styling */
 html, body {
-  height: 100%;
-  background: #0b0d12; /* optional */
+  @apply h-full w-full bg-black text-white antialiased;
+}
+
+/* 🔹 Layout helpers */
+.container {
+  @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+}
+
+/* 🔹 Links */
+a {
+  @apply text-blue-400 hover:text-blue-300 transition;
+}
+
+/* 🔹 Form labels */
+label {
+  @apply block text-sm font-medium mb-1;
+}
+
+/* 🔹 Error messages */
+.error {
+  @apply text-red-500 text-sm mt-1;
 }
