@@ -3,12 +3,10 @@
 @tailwind utilities;
 
 /* App-wide light styling */
-:root {
-  --bg: #0b0d12;
-  --card: #10131a;
-  --text: #e7ecf3;
-  --muted: #a7b0be;
-  --brand: #2563eb;
+:root { --muted: #69707a; }
+.card { @apply rounded-2xl border border-black/10 bg-white/5 backdrop-blur p-4 shadow-sm; }
+.input { @apply w-full rounded-xl border border-black/10 bg-white/5 px-3 py-2 outline-none; }
+.btn   { @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-medium border border-black/10 hover:opacity-90; }
 }
 
 html, body {
