@@ -10,10 +10,7 @@ const nextConfig = {
     ignoreBuildErrors: true, // Ignore TS errors during Vercel builds
   },
 
-  experimental: {
-    serverActions: true,
-  },
-
+  
   // Optional: makes sure .env vars are available everywhere
   env: {
     DATABASE_URL: process.env.DATABASE_URL,
