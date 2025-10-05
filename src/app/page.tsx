@@ -1,174 +1,96 @@
-"use client";
+// src/app/page.tsx
+import type { Metadata } from "next";
+import { auth } from "@/lib/auth";           // NextAuth v5 helper
+import AuthPanel from "@/components/AuthPanel";
 
-import { useState, useRef } from "react";
+export const metadata: Metadata = {
+  title: "MorphAI",
+  description: "Face Swap tool",
+};
 
-type SwapResponse =
-  | { ok: true; image: string } // base64 PNG from /api/swap
-  | { ok: false; error: string };
+export default async function Page() {
+  const session = await auth();
 
-export default function Home() {
-  const [srcFile, setSrcFile] = useState<File | null>(null);
-  const [tgtFile, setTgtFile] = useState<File | null>(null);
-  const [srcPreview, setSrcPreview] = useState<string | null>(null);
-  const [tgtPreview, setTgtPreview] = useState<string | null>(null);
-
-  const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
-  const [result, setResult] = useState<string | null>(null);
-
-  const resultLinkRef = useRef<HTMLAnchorElement>(null);
-
-  function onPick(
-    file: File | null,
-    setterFile: (f: File | null) => void,
-    setterPreview: (url: string | null) => void
-  ) {
-    setterFile(file);
-    setResult(null);
-    setMsg(null);
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setterPreview(url);
-    } else {
-      setterPreview(null);
-    }
+  if (!session) {
+    // Not signed-in → show combined Register/Login panel
+    return (
+      <main className="container py-10">
+        <div className="mx-auto max-w-md">
+          <AuthPanel />
+        </div>
+      </main>
+    );
   }
 
-  async function doSwap() {
-    if (!srcFile || !tgtFile) {
-      setMsg("Please select both images first.");
-      return;
-    }
-    setLoading(true);
-    setMsg(null);
-    setResult(null);
-
-    try {
-      const body = new FormData();
-      body.append("source", srcFile);
-      body.append("target", tgtFile);
-
-      const res = await fetch("/api/swap", {
-        method: "POST",
-        body,
-      });
-
-      const data = (await res.json()) as SwapResponse;
-      if (!res.ok || !data.ok) {
-        setMsg((!data.ok && data.error) || "Swap failed.");
-        return;
-      }
-
-      // data.image is base64 (no data URL prefix)
-      const dataUrl = `data:image/png;base64,${data.image}`;
-      setResult(dataUrl);
-      setMsg("Done!");
-    } catch (e) {
-      setMsg("Network error while swapping.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function resetAll() {
-    setSrcFile(null);
-    setTgtFile(null);
-    setSrcPreview(null);
-    setTgtPreview(null);
-    setResult(null);
-    setMsg(null);
-  }
-
+  // Signed-in → show the tool UI (your existing content goes here)
   return (
-    <main className="min-h-screen grid place-items-center p-4">
-      <div className="w-full max-w-3xl card">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-semibold">MorphAI — Face Swap</h1>
-          <p className="text-sm opacity-75 mt-1">
-            Upload a <b>source (face)</b> and a <b>target (photo)</b>, then hit Swap.
-          </p>
-        </div>
+    <main className="container py-8">
+      <div className="mx-auto max-w-3xl">
+        {/* --- Tool Card --- */}
+        <div className="card">
+          <h1 className="text-xl font-semibold mb-4">Face Swap</h1>
 
-        {/* Pickers */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="block text-sm">Source (face)</label>
-            <input
-              type="file"
-              accept="image/*"
-              className="input"
-              onChange={(e) => onPick(e.target.files?.[0] ?? null, setSrcFile, setSrcPreview)}
-            />
-            <div className="preview-box">
-              {srcPreview ? (
-                <img src={srcPreview} alt="Source preview" className="preview-img" />
-              ) : (
-                <span className="preview-empty">No image</span>
-              )}
-            </div>
+          {/* Source image */}
+          <div className="mb-4">
+            <label className="block text-sm mb-1">Source image</label>
+            <input id="src" type="file" accept="image/*" className="input" />
           </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm">Target (photo)</label>
-            <input
-              type="file"
-              accept="image/*"
-              className="input"
-              onChange={(e) => onPick(e.target.files?.[0] ?? null, setTgtFile, setTgtPreview)}
-            />
-            <div className="preview-box">
-              {tgtPreview ? (
-                <img src={tgtPreview} alt="Target preview" className="preview-img" />
-              ) : (
-                <span className="preview-empty">No image</span>
-              )}
-            </div>
+          {/* Target image */}
+          <div className="mb-4">
+            <label className="block text-sm mb-1">Target image</label>
+            <input id="tgt" type="file" accept="image/*" className="input" />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button id="swapBtn" className="btn">Swap</button>
+            <span id="status" className="text-sm opacity-80"></span>
           </div>
         </div>
-
-        {/* Actions */}
-        <div className="mt-6 flex flex-col sm:flex-row gap-3">
-          <button
-            className="btn btn-primary flex-1"
-            onClick={doSwap}
-            disabled={loading}
-          >
-            {loading ? "Swapping…" : "Swap"}
-          </button>
-          <button className="btn flex-1" onClick={resetAll} disabled={loading}>
-            Reset
-          </button>
-        </div>
-
-        {/* Messages */}
-        {msg && (
-          <p className={`mt-4 text-sm ${msg === "Done!" ? "text-green-500" : "text-red-400"}`}>
-            {msg}
-          </p>
-        )}
 
         {/* Result */}
-        {result && (
-          <div className="mt-6 space-y-3">
-            <div className="preview-box">
-              <img src={result} alt="Result" className="preview-img" />
-            </div>
-            <div className="flex gap-3">
-              <a
-                ref={resultLinkRef}
-                download="morphai-result.png"
-                href={result}
-                className="btn btn-primary flex-1 text-center"
-              >
-                Download PNG
-              </a>
-              <button className="btn flex-1" onClick={() => setResult(null)}>
-                Hide
-              </button>
-            </div>
-          </div>
-        )}
+        <div className="card mt-6 hidden" id="resultCard">
+          <h2 className="text-lg font-medium mb-3">Result</h2>
+          <img id="resultImg" alt="Result" className="rounded-xl w-full h-auto" />
+          <a id="downloadLink" className="btn mt-4 inline-block" download="swap.png">Download</a>
+        </div>
       </div>
+
+      {/* Simple client-side wiring for the demo; replace with your existing script if you have one */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+            const el = (id)=>document.getElementById(id);
+            const btn = el('swapBtn'), status = el('status');
+            const resultCard = el('resultCard'), resultImg = el('resultImg'), dl = el('downloadLink');
+
+            btn?.addEventListener('click', async () => {
+              const src = (el('src') as HTMLInputElement)?.files?.[0];
+              const tgt = (el('tgt') as HTMLInputElement)?.files?.[0];
+              if (!src || !tgt) { status.textContent = 'Select both images'; return; }
+
+              const fd = new FormData();
+              fd.append('source', src);
+              fd.append('target', tgt);
+
+              status.textContent = 'Uploading...';
+              try {
+                const r = await fetch('/api/swap', { method: 'POST', body: fd });
+                if (!r.ok) throw new Error('Swap failed');
+                const blob = await r.blob();
+                const url = URL.createObjectURL(blob);
+                resultImg.src = url;
+                dl.href = url;
+                resultCard.classList.remove('hidden');
+                status.textContent = 'Done';
+              } catch(e) {
+                console.error(e);
+                status.textContent = 'Failed';
+              }
+            });
+          `,
+        }}
+      />
     </main>
   );
 }
