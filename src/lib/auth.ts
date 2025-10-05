@@ -11,17 +11,14 @@ export const authOptions: NextAuthConfig = {
   pages: { signIn: "/login" },
   providers: [
     Credentials({
-      name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
+      credentials: { email: {}, password: {} },
       authorize: async (creds) => {
         const email = (creds?.email || "").toLowerCase().trim();
         const password = creds?.password || "";
+        if (!email || !password) return null;
 
         const user = await prisma.user.findUnique({ where: { email } });
-        if (!user || !user.passwordHash) return null;
+        if (!user?.passwordHash) return null;
 
         const ok = await bcrypt.compare(password, user.passwordHash);
         if (!ok) return null;
@@ -32,4 +29,5 @@ export const authOptions: NextAuthConfig = {
   ],
 };
 
+// v5 helpers — this MUST exist for `auth()` to work
 export const { handlers, auth, signIn, signOut } = NextAuth(authOptions);
