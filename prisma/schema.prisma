@@ -14,10 +14,3 @@ model User {
   passwordHash String
   createdAt    DateTime @default(now())
 }
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model comments {
-  comment String?
-
-  @@ignore
-}
