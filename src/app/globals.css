@@ -2,37 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 🔹 Custom reusable utilities */
+/* Small design tokens */
+.container { @apply max-w-5xl mx-auto px-4; }
+
+.card {
+  @apply rounded-2xl border border-black/10 bg-white/5 p-5 shadow-sm backdrop-blur;
+}
+
 .input {
   @apply w-full rounded-xl border border-black/10 bg-white/5 px-3 py-2 outline-none;
 }
 
 .btn {
-  @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-medium 
+  @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-medium
          border border-black/10 hover:opacity-90 transition;
 }
 
-/* 🔹 Global HTML + body styling */
-html, body {
-  @apply h-full w-full bg-black text-white antialiased;
+.btn-primary {
+  @apply bg-white/10;
 }
 
-/* 🔹 Layout helpers */
-.container {
-  @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+.preview-box {
+  @apply aspect-video w-full overflow-hidden rounded-xl border border-black/10 bg-black/20 grid place-items-center;
 }
 
-/* 🔹 Links */
-a {
-  @apply text-blue-400 hover:text-blue-300 transition;
+.preview-img {
+  @apply h-full w-full object-contain;
 }
 
-/* 🔹 Form labels */
-label {
-  @apply block text-sm font-medium mb-1;
-}
-
-/* 🔹 Error messages */
-.error {
-  @apply text-red-500 text-sm mt-1;
+.preview-empty {
+  @apply text-xs opacity-70;
 }
