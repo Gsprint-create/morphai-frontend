@@ -1,37 +1,39 @@
+// src/lib/auth.ts
 import NextAuth from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import { prisma } from "./prisma";
+import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import { prisma } from "./prisma";
 
-export const authOptions = {
+export const {
+  handlers,   // { GET, POST }
+  auth,       // server helper -> await auth()
+  signIn,
+  signOut,
+} = NextAuth({
+  trustHost: true,
+  secret: process.env.NEXTAUTH_SECRET,
+  session: { strategy: "jwt" },
+  pages: { signIn: "/login" },
   providers: [
-    CredentialsProvider({
+    Credentials({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "text" },
+        email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+      authorize: async (creds) => {
+        const email = (creds?.email || "").toLowerCase().trim();
+        const password = creds?.password || "";
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
-        if (!user) return null;
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user || !user.passwordHash) return null;
 
-        const isValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-        if (!isValid) return null;
+        const ok = await bcrypt.compare(password, user.passwordHash);
+        if (!ok) return null;
 
-        return { id: user.id, name: user.name, email: user.email };
+        // Return minimal session payload
+        return { id: user.id, name: user.name ?? null, email: user.email };
       },
     }),
   ],
-  session: { strategy: "jwt" },
-  secret: process.env.NEXTAUTH_SECRET,
-};
-
-const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
+});
