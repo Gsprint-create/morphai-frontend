@@ -1,6 +1,7 @@
 // src/app/page.tsx
 import type { Metadata } from "next";
-import { auth } from "@/lib/auth";           // NextAuth v5 helper
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 import AuthPanel from "@/components/AuthPanel";
 
 export const metadata: Metadata = {
@@ -9,10 +10,10 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-  const session = await auth();
+  const session = await getServerSession(authOptions);
 
+  // Not signed-in → show combined Register/Login panel
   if (!session) {
-    // Not signed-in → show combined Register/Login panel
     return (
       <main className="container py-10">
         <div className="mx-auto max-w-md">
@@ -22,7 +23,7 @@ export default async function Page() {
     );
   }
 
-  // Signed-in → show the tool UI (your existing content goes here)
+  // Signed-in → show the tool UI
   return (
     <main className="container py-8">
       <div className="mx-auto max-w-3xl">
@@ -42,6 +43,11 @@ export default async function Page() {
             <input id="tgt" type="file" accept="image/*" className="input" />
           </div>
 
+          {/* Toggle row */}
+          <div className="mb-4">
+            <div id="toggleMount" />
+          </div>
+
           <div className="flex items-center gap-2">
             <button id="swapBtn" className="btn">Swap</button>
             <span id="status" className="text-sm opacity-80"></span>
@@ -56,7 +62,7 @@ export default async function Page() {
         </div>
       </div>
 
-      {/* Simple client-side wiring for the demo; replace with your existing script if you have one */}
+      {/* Client-side wiring (kept simple) */}
       <script
         dangerouslySetInnerHTML={{
           __html: `
@@ -64,14 +70,46 @@ export default async function Page() {
             const btn = el('swapBtn'), status = el('status');
             const resultCard = el('resultCard'), resultImg = el('resultImg'), dl = el('downloadLink');
 
+            // Toggle state (persist)
+            let enhance = localStorage.getItem('enhance') === 'true';
+
+            // Mount a minimal toggle using the same styling
+            (function mountToggle(){
+              const root = document.getElementById('toggleMount');
+              if (!root) return;
+              root.innerHTML = \`
+                <label class="flex items-start gap-3 select-none">
+                  <button id="enhanceToggle" type="button" role="switch" aria-checked="\${enhance}" aria-label="Enhance result"
+                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition \${enhance ? 'bg-blue-600':'bg-gray-400/60'}">
+                    <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition \${enhance ? 'translate-x-5':'translate-x-0.5'} translate-x-0.5"></span>
+                  </button>
+                  <div class="leading-tight">
+                    <div class="font-medium">Enhance result</div>
+                    <div class="text-sm opacity-75">Slightly sharper & refined output</div>
+                  </div>
+                </label>\`;
+              const t = document.getElementById('enhanceToggle');
+              t?.addEventListener('click', () => {
+                enhance = !enhance;
+                localStorage.setItem('enhance', String(enhance));
+                t.setAttribute('aria-checked', String(enhance));
+                t.classList.toggle('bg-blue-600', enhance);
+                t.classList.toggle('bg-gray-400/60', !enhance);
+                const knob = t.querySelector('span');
+                knob?.classList.toggle('translate-x-5', enhance);
+                knob?.classList.toggle('translate-x-0.5', !enhance);
+              });
+            })();
+
             btn?.addEventListener('click', async () => {
-              const src = (el('src') as HTMLInputElement)?.files?.[0];
-              const tgt = (el('tgt') as HTMLInputElement)?.files?.[0];
+              const src = (el('src'))?.files?.[0];
+              const tgt = (el('tgt'))?.files?.[0];
               if (!src || !tgt) { status.textContent = 'Select both images'; return; }
 
               const fd = new FormData();
               fd.append('source', src);
               fd.append('target', tgt);
+              fd.append('enhance', String(enhance)); // send toggle to backend
 
               status.textContent = 'Uploading...';
               try {
