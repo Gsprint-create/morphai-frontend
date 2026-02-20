@@ -287,7 +287,7 @@ export default function FaceSwapPage() {
               <span className="text-white/80 font-medium">target image</span>.
             </p>
             <p className="mt-2 text-xs text-white/40">
-              Backend: <span className="text-white/60">{API_BASE}</span>
+              # Backend: <span className="text-white/60">{API_BASE}</span>
             </p>
           </div>
 
@@ -468,7 +468,7 @@ export default function FaceSwapPage() {
               </div>
 
               <div className="mt-3 text-xs text-white/40">
-                Note: current backend swaps onto all faces in the target.
+                
               </div>
             </div>
           </div>
@@ -479,7 +479,7 @@ export default function FaceSwapPage() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-sm font-semibold">Result</div>
-                  <div className="mt-1 text-xs text-white/50">Output PNG from Railway</div>
+                  
                 </div>
 
                 <div className="flex gap-2">
@@ -515,8 +515,7 @@ export default function FaceSwapPage() {
               </div>
 
               <div className="mt-3 text-xs text-white/40">
-                If result looks “off”, we can add alignment options on backend (face selection, swap first face only,
-                etc.).
+                
               </div>
             </div>
           </div>
