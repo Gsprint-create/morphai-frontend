@@ -33,7 +33,7 @@ let NSFW_MODEL: nsfwjs.NSFWJS | null = null;
 async function loadNsfwModel() {
   if (NSFW_MODEL) return NSFW_MODEL;
   await tf.ready();
-  NSFW_MODEL = await nsfwjs.load(); // default model
+  NSFW_MODEL = await nsfwjs.load();
   return NSFW_MODEL;
 }
 
@@ -61,10 +61,11 @@ async function scanImageFile(file: File, threshold = 0.7) {
   const lookup: Record<string, number> = {};
   for (const p of preds) lookup[p.className] = p.probability;
 
+  // You chose Porn + Hentai only (good for fewer false positives)
   const porn = lookup["Porn"] ?? 0;
   const hentai = lookup["Hentai"] ?? 0;
 
-  const isNsfw = Math.max(porn,hentai) >= threshold;
+  const isNsfw = Math.max(porn, hentai) >= threshold;
   return { isNsfw, preds };
 }
 
@@ -78,10 +79,7 @@ export default function FaceSwapPage() {
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [resultBlob, setResultBlob] = useState<Blob | null>(null);
 
-  // NEW: consent checkbox
   const [consentChecked, setConsentChecked] = useState(false);
-
-  // NEW: safety scanning state
   const [isScanning, setIsScanning] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
@@ -102,8 +100,6 @@ export default function FaceSwapPage() {
   }
 
   useEffect(() => {
-    // Preload model in background (best UX)
-    // If this fails, we still let server-side safety do the job.
     loadNsfwModel().catch(() => {});
     return () => {
       abortRef.current?.abort();
@@ -125,7 +121,6 @@ export default function FaceSwapPage() {
       return;
     }
 
-    // NEW: client-side NSFW scan
     setIsScanning(true);
     try {
       const { isNsfw } = await scanImageFile(file, 0.7);
@@ -134,8 +129,7 @@ export default function FaceSwapPage() {
         return;
       }
     } catch {
-      // If client scan fails (model not loaded, browser issue), don’t block.
-      // Server-side NudeNet will still enforce.
+      // If client scan fails, server-side NudeNet will still enforce.
     } finally {
       setIsScanning(false);
     }
@@ -187,7 +181,7 @@ export default function FaceSwapPage() {
     abortRef.current = controller;
 
     try {
-      // Optional: re-scan right before sending (belt + suspenders)
+      // Re-scan right before sending (optional but strong)
       setIsScanning(true);
       try {
         const [srcScan, tgtScan] = await Promise.all([
@@ -199,7 +193,6 @@ export default function FaceSwapPage() {
           return;
         }
       } catch {
-        // ignore client scan errors
       } finally {
         setIsScanning(false);
       }
@@ -207,8 +200,6 @@ export default function FaceSwapPage() {
       const fd = new FormData();
       fd.append("source", source.file);
       fd.append("target", target.file);
-
-      // REQUIRED by backend
       fd.append("consent", "true");
 
       const params = new URLSearchParams({
@@ -285,9 +276,6 @@ export default function FaceSwapPage() {
               Upload a <span className="text-white/80 font-medium">source face</span> and a{" "}
               <span className="text-white/80 font-medium">target image</span>.
             </p>
-            <p className="mt-2 text-xs text-white/40">
-              # Backend: <span className="text-white/60">{API_BASE}</span>
-            </p>
           </div>
 
           <a
@@ -305,7 +293,7 @@ export default function FaceSwapPage() {
         )}
 
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* LEFT: inputs */}
+          {/* LEFT */}
           <div className="space-y-6">
             {/* Source */}
             <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6">
@@ -349,11 +337,7 @@ export default function FaceSwapPage() {
 
                     <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-black">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={source.url}
-                        alt="Source preview"
-                        className="h-72 w-full object-contain bg-black"
-                      />
+                      <img src={source.url} alt="Source preview" className="h-72 w-full object-contain bg-black" />
                     </div>
                   </div>
                 )}
@@ -402,11 +386,7 @@ export default function FaceSwapPage() {
 
                     <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-black">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={target.url}
-                        alt="Target preview"
-                        className="h-72 w-full object-contain bg-black"
-                      />
+                      <img src={target.url} alt="Target preview" className="h-72 w-full object-contain bg-black" />
                     </div>
                   </div>
                 )}
@@ -419,7 +399,6 @@ export default function FaceSwapPage() {
                 ⚠️ No explicit content, minors, or non-consensual images. We block NSFW images automatically.
               </div>
 
-              {/* Consent checkbox */}
               <div className="flex items-start gap-3">
                 <input
                   id="consent"
@@ -432,6 +411,10 @@ export default function FaceSwapPage() {
                   I confirm I have permission to use these images and they do not contain explicit content, minors, or
                   violate anyone’s privacy.
                 </label>
+              </div>
+
+              <div className="mt-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/70">
+                💡 Tip: Use a clear, front-facing photo with good lighting for the best results.
               </div>
 
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
@@ -465,20 +448,15 @@ export default function FaceSwapPage() {
                   </button>
                 </div>
               </div>
-
-              <div className="mt-3 text-xs text-white/40">
-                
-              </div>
             </div>
           </div>
 
-          {/* RIGHT: result */}
+          {/* RIGHT */}
           <div className="space-y-6">
             <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-sm font-semibold">Result</div>
-                  
                 </div>
 
                 <div className="flex gap-2">
@@ -511,10 +489,6 @@ export default function FaceSwapPage() {
                     {isProcessing ? "Swapping faces…" : "Your swapped image will appear here"}
                   </div>
                 )}
-              </div>
-
-              <div className="mt-3 text-xs text-white/40">
-                
               </div>
             </div>
           </div>
