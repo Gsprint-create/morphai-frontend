@@ -62,10 +62,9 @@ async function scanImageFile(file: File, threshold = 0.7) {
   for (const p of preds) lookup[p.className] = p.probability;
 
   const porn = lookup["Porn"] ?? 0;
-  const sexy = lookup["Sexy"] ?? 0;
   const hentai = lookup["Hentai"] ?? 0;
 
-  const isNsfw = Math.max(porn, sexy, hentai) >= threshold;
+  const isNsfw = Math.max(porn,hentai) >= threshold;
   return { isNsfw, preds };
 }
 
