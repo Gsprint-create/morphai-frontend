@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import * as nsfwjs from "nsfwjs";
+import * as tf from "@tensorflow/tfjs";
 
 const API_BASE = "https://morphai-production-9b8f.up.railway.app";
 
@@ -23,6 +25,50 @@ function humanSize(bytes: number) {
   return `${v.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
+// --------------------
+// Client-side NSFW (nsfwjs)
+// --------------------
+let NSFW_MODEL: nsfwjs.NSFWJS | null = null;
+
+async function loadNsfwModel() {
+  if (NSFW_MODEL) return NSFW_MODEL;
+  await tf.ready();
+  NSFW_MODEL = await nsfwjs.load(); // default model
+  return NSFW_MODEL;
+}
+
+function fileToImage(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = (e) => {
+      URL.revokeObjectURL(url);
+      reject(e);
+    };
+    img.src = url;
+  });
+}
+
+async function scanImageFile(file: File, threshold = 0.7) {
+  const model = await loadNsfwModel();
+  const img = await fileToImage(file);
+  const preds = await model.classify(img);
+
+  const lookup: Record<string, number> = {};
+  for (const p of preds) lookup[p.className] = p.probability;
+
+  const porn = lookup["Porn"] ?? 0;
+  const sexy = lookup["Sexy"] ?? 0;
+  const hentai = lookup["Hentai"] ?? 0;
+
+  const isNsfw = Math.max(porn, sexy, hentai) >= threshold;
+  return { isNsfw, preds };
+}
+
 export default function FaceSwapPage() {
   const [source, setSource] = useState<PickedFile | null>(null);
   const [target, setTarget] = useState<PickedFile | null>(null);
@@ -33,9 +79,15 @@ export default function FaceSwapPage() {
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [resultBlob, setResultBlob] = useState<Blob | null>(null);
 
+  // NEW: consent checkbox
+  const [consentChecked, setConsentChecked] = useState(false);
+
+  // NEW: safety scanning state
+  const [isScanning, setIsScanning] = useState(false);
+
   const abortRef = useRef<AbortController | null>(null);
 
-  const canSwap = !!source && !!target && !isProcessing;
+  const canSwap = !!source && !!target && consentChecked && !isProcessing && !isScanning;
 
   function cleanupPicked(p: PickedFile | null) {
     if (!p) return;
@@ -51,6 +103,9 @@ export default function FaceSwapPage() {
   }
 
   useEffect(() => {
+    // Preload model in background (best UX)
+    // If this fails, we still let server-side safety do the job.
+    loadNsfwModel().catch(() => {});
     return () => {
       abortRef.current?.abort();
       cleanupPicked(source);
@@ -60,7 +115,7 @@ export default function FaceSwapPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function onPick(file: File | null, which: "source" | "target") {
+  async function onPick(file: File | null, which: "source" | "target") {
     setError(null);
     cleanupResult();
 
@@ -69,6 +124,21 @@ export default function FaceSwapPage() {
     if (!file.type.startsWith("image/")) {
       setError("Please upload an image file (PNG/JPG/WebP).");
       return;
+    }
+
+    // NEW: client-side NSFW scan
+    setIsScanning(true);
+    try {
+      const { isNsfw } = await scanImageFile(file, 0.7);
+      if (isNsfw) {
+        setError("Blocked: explicit/adult images are not allowed.");
+        return;
+      }
+    } catch {
+      // If client scan fails (model not loaded, browser issue), don’t block.
+      // Server-side NudeNet will still enforce.
+    } finally {
+      setIsScanning(false);
     }
 
     const picked: PickedFile = {
@@ -104,6 +174,11 @@ export default function FaceSwapPage() {
   async function handleSwap() {
     if (!source || !target || isProcessing) return;
 
+    if (!consentChecked) {
+      setError("Please confirm you have permission to use these images.");
+      return;
+    }
+
     setIsProcessing(true);
     setError(null);
     cleanupResult();
@@ -113,24 +188,60 @@ export default function FaceSwapPage() {
     abortRef.current = controller;
 
     try {
+      // Optional: re-scan right before sending (belt + suspenders)
+      setIsScanning(true);
+      try {
+        const [srcScan, tgtScan] = await Promise.all([
+          scanImageFile(source.file, 0.7),
+          scanImageFile(target.file, 0.7),
+        ]);
+        if (srcScan.isNsfw || tgtScan.isNsfw) {
+          setError("Blocked: explicit/adult images are not allowed.");
+          return;
+        }
+      } catch {
+        // ignore client scan errors
+      } finally {
+        setIsScanning(false);
+      }
+
       const fd = new FormData();
-      // IMPORTANT: backend expects these keys
       fd.append("source", source.file);
       fd.append("target", target.file);
 
-      const res = await fetch(`${API_BASE}/swap/single`, {
+      // REQUIRED by backend
+      fd.append("consent", "true");
+
+      const params = new URLSearchParams({
+        // swap_all: "true",
+        // harmonize_enable: "true",
+      });
+
+      const res = await fetch(`${API_BASE}/swap/single?${params.toString()}`, {
         method: "POST",
         body: fd,
         signal: controller.signal,
       });
 
       if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        let message = txt || `Request failed (${res.status})`;
+        let message = `Request failed (${res.status})`;
+        const ct = res.headers.get("content-type") || "";
+
         try {
-          const parsed = JSON.parse(txt);
-          if (parsed?.detail) message = parsed.detail;
+          if (ct.includes("application/json")) {
+            const j = await res.json();
+            if (typeof j?.detail === "string") message = j.detail;
+            else if (Array.isArray(j?.detail)) message = j.detail?.[0]?.msg || message;
+          } else {
+            const txt = await res.text().catch(() => "");
+            if (txt) message = txt;
+            try {
+              const parsed = JSON.parse(txt);
+              if (typeof parsed?.detail === "string") message = parsed.detail;
+            } catch {}
+          }
         } catch {}
+
         setError(message);
         return;
       }
@@ -150,6 +261,7 @@ export default function FaceSwapPage() {
     } finally {
       setIsProcessing(false);
       abortRef.current = null;
+      setIsScanning(false);
     }
   }
 
@@ -223,7 +335,9 @@ export default function FaceSwapPage() {
                       onChange={(e) => onPick(e.target.files?.[0] || null, "source")}
                     />
                     <div>
-                      <div className="text-sm font-semibold text-white/80">Click to upload</div>
+                      <div className="text-sm font-semibold text-white/80">
+                        {isScanning ? "Scanning..." : "Click to upload"}
+                      </div>
                       <div className="mt-1 text-xs text-white/50">PNG / JPG / WebP</div>
                     </div>
                   </label>
@@ -274,7 +388,9 @@ export default function FaceSwapPage() {
                       onChange={(e) => onPick(e.target.files?.[0] || null, "target")}
                     />
                     <div>
-                      <div className="text-sm font-semibold text-white/80">Click to upload</div>
+                      <div className="text-sm font-semibold text-white/80">
+                        {isScanning ? "Scanning..." : "Click to upload"}
+                      </div>
                       <div className="mt-1 text-xs text-white/50">PNG / JPG / WebP</div>
                     </div>
                   </label>
@@ -300,7 +416,26 @@ export default function FaceSwapPage() {
 
             {/* Actions */}
             <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6">
-              <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="mb-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-xs text-white/70">
+                ⚠️ No explicit content, minors, or non-consensual images. We block NSFW images automatically.
+              </div>
+
+              {/* Consent checkbox */}
+              <div className="flex items-start gap-3">
+                <input
+                  id="consent"
+                  type="checkbox"
+                  checked={consentChecked}
+                  onChange={(e) => setConsentChecked(e.target.checked)}
+                  className="mt-1 h-4 w-4 accent-blue-500"
+                />
+                <label htmlFor="consent" className="text-xs text-white/70 leading-relaxed">
+                  I confirm I have permission to use these images and they do not contain explicit content, minors, or
+                  violate anyone’s privacy.
+                </label>
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="text-sm text-white/60">
                   {!source && !target
                     ? "Upload source + target to start."
@@ -308,6 +443,8 @@ export default function FaceSwapPage() {
                     ? "Upload a source face."
                     : !target
                     ? "Upload a target image."
+                    : !consentChecked
+                    ? "Confirm consent to enable swapping."
                     : "Ready. Click Swap Face."}
                 </div>
 
@@ -325,7 +462,7 @@ export default function FaceSwapPage() {
                     disabled={!canSwap}
                     className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-40 transition"
                   >
-                    {isProcessing ? "Processing..." : "Swap Face"}
+                    {isProcessing ? "Processing..." : isScanning ? "Scanning..." : "Swap Face"}
                   </button>
                 </div>
               </div>
@@ -369,11 +506,7 @@ export default function FaceSwapPage() {
               <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-black">
                 {resultUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={resultUrl}
-                    alt="Result"
-                    className="h-[520px] w-full object-contain bg-black"
-                  />
+                  <img src={resultUrl} alt="Result" className="h-[520px] w-full object-contain bg-black" />
                 ) : (
                   <div className="flex h-[520px] items-center justify-center text-sm text-white/50">
                     {isProcessing ? "Swapping faces…" : "Your swapped image will appear here"}
