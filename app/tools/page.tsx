@@ -1,8 +1,5 @@
 "use client";
 
-import { redirect } from "next/navigation";
-import { getUserFromSession } from "@/lib/session";
-
 const tools = [
   {
     key: "faceswap",
@@ -57,13 +54,13 @@ function PreviewBlock({ label }: { label: string }) {
   );
 }
 
-export default async function ToolsPage() {
-
-  const user = await getUserFromSession();
-
-  if (!user) {
-    redirect("/auth/login");
-   }
+export default function ToolsPage() {
+  async function logout() {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      window.location.href = "/auth/login";
+    }
   }
 
   return (
@@ -74,17 +71,25 @@ export default async function ToolsPage() {
           <div>
             <h1 className="text-3xl font-bold">MorphAI Tools</h1>
             <p className="mt-2 text-sm text-white/60">
-              A quick overview of what you’ll get inside MorphAI. Tools shown below are previews — not all are live yet.
+              Your tool hub. FaceSwap and Genix are live. More tools coming soon.
             </p>
           </div>
 
-          <button
-            onClick={logout}
-            disabled={loggingOut}
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 hover:bg-white/10 disabled:opacity-40 transition"
-          >
-            {loggingOut ? "Logging out..." : "Logout"}
-          </button>
+          <div className="flex gap-3">
+            <a
+              href="/"
+              className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition"
+            >
+              Home
+            </a>
+
+            <button
+              onClick={logout}
+              className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition"
+            >
+              Logout
+            </button>
+          </div>
         </div>
 
         {/* Stacked tool sections */}
@@ -106,11 +111,12 @@ export default async function ToolsPage() {
                   <div className="flex flex-wrap items-center gap-3">
                     <h2 className="text-xl font-semibold">{t.name}</h2>
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      className={[
+                        "rounded-full px-3 py-1 text-xs font-semibold border",
                         t.live
-                          ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/20"
-                          : "bg-white/5 text-white/60 border border-white/10"
-                      }`}
+                          ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/20"
+                          : "bg-white/5 text-white/60 border-white/10",
+                      ].join(" ")}
                     >
                       {t.status}
                     </span>
