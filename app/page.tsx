@@ -9,7 +9,7 @@ export default function Home() {
           href="/tools"
           className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold hover:bg-blue-500"
         >
-          Enter Tools →
+          Login →
         </a>
       </div>
     </main>
