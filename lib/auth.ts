@@ -24,14 +24,15 @@ export function verifySession(token: string): { user: SessionUser } | null {
   }
 }
 
-/** ✅ Read session user from cookie (server-side) */
-export function getSessionUser(): SessionUser | null {
-  const token = cookies().get(COOKIE_NAME)?.value;
+// ✅ READ cookie (your Next version types cookies() as Promise)
+export async function getSessionUser(): Promise<SessionUser | null> {
+  const jar = await cookies();
+  const token = jar.get(COOKIE_NAME)?.value;
   if (!token) return null;
   return verifySession(token)?.user ?? null;
 }
 
-/** ✅ Set cookie on NextResponse */
+// ✅ SET cookie on NextResponse
 export function setSessionCookie(res: NextResponse, token: string) {
   res.cookies.set(COOKIE_NAME, token, {
     httpOnly: true,
@@ -42,7 +43,7 @@ export function setSessionCookie(res: NextResponse, token: string) {
   });
 }
 
-/** ✅ Clear cookie on NextResponse */
+// ✅ CLEAR cookie on NextResponse
 export function clearSessionCookie(res: NextResponse) {
   res.cookies.set(COOKIE_NAME, "", {
     httpOnly: true,
