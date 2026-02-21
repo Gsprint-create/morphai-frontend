@@ -1,3 +1,7 @@
+import { redirect } from "next/navigation";
+
+  redirect("/auth/login");
+}
 export default function Home() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-black text-white">

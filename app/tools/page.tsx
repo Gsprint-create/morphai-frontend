@@ -1,34 +1,28 @@
 "use client";
 
+import { useState } from "react";
+
 const tools = [
   {
     key: "faceswap",
     name: "FaceSwap",
     status: "Live",
     desc: "Swap faces with a clean workflow: upload source + target, get a result you can download.",
-    bullets: [
-      "Fast single-swap flow",
-      "High-quality output (PNG)",
-      
-    ],
+    bullets: ["Fast single-swap flow", "High-quality output (PNG)"],
     href: "/tools/faceswap",
     live: true,
     gradient: "from-blue-500/20 via-cyan-400/10 to-transparent",
   },
   {
-  key: "genix",
-  name: "Genix",
-  status: "Live",
-  desc: "Generate an image from a prompt with style presets. Download your result as PNG.",
-  bullets: [
-    "Prompt + style presets",
-    "High-quality PNG output",
-    
-  ],
-  href: "/tools/genix",
-  live: true,
-  gradient: "from-purple-500/20 via-fuchsia-400/10 to-transparent",
-},
+    key: "genix",
+    name: "Genix",
+    status: "Live",
+    desc: "Generate an image from a prompt with style presets. Download your result as PNG.",
+    bullets: ["Prompt + style presets", "High-quality PNG output"],
+    href: "/tools/genix",
+    live: true,
+    gradient: "from-purple-500/20 via-fuchsia-400/10 to-transparent",
+  },
   {
     key: "video",
     name: "Video Tools",
@@ -53,13 +47,9 @@ function PreviewBlock({ label }: { label: string }) {
       {/* Placeholder content */}
       <div className="relative flex h-full items-center justify-center p-6">
         <div className="text-center">
-          <div className="text-xs font-semibold tracking-wide text-white/60">
-            PREVIEW
-          </div>
+          <div className="text-xs font-semibold tracking-wide text-white/60">PREVIEW</div>
           <div className="mt-2 text-sm text-white/80">{label}</div>
-          <div className="mt-1 text-xs text-white/50">
-            (placeholder image)
-          </div>
+          <div className="mt-1 text-xs text-white/50">(placeholder image)</div>
         </div>
       </div>
     </div>
@@ -67,16 +57,38 @@ function PreviewBlock({ label }: { label: string }) {
 }
 
 export default function ToolsPage() {
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function logout() {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      window.location.href = "/auth/login";
+    } finally {
+      setLoggingOut(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-black text-white">
       <div className="mx-auto max-w-6xl px-6 py-12">
         {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-3xl font-bold">MorphAI Tools</h1>
-          <p className="mt-2 text-sm text-white/60">
-            A quick overview of what you’ll get inside MorphAI. Tools shown below
-            are previews — not all are live yet.
-          </p>
+        <div className="mb-10 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold">MorphAI Tools</h1>
+            <p className="mt-2 text-sm text-white/60">
+              A quick overview of what you’ll get inside MorphAI. Tools shown below are previews — not all are live yet.
+            </p>
+          </div>
+
+          <button
+            onClick={logout}
+            disabled={loggingOut}
+            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 hover:bg-white/10 disabled:opacity-40 transition"
+          >
+            {loggingOut ? "Logging out..." : "Logout"}
+          </button>
         </div>
 
         {/* Stacked tool sections */}
@@ -87,9 +99,7 @@ export default function ToolsPage() {
               className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-6 md:p-8"
             >
               {/* Background wash */}
-              <div
-                className={`pointer-events-none absolute inset-0 bg-gradient-to-r ${t.gradient}`}
-              />
+              <div className={`pointer-events-none absolute inset-0 bg-gradient-to-r ${t.gradient}`} />
 
               <div className="relative grid gap-6 md:grid-cols-2 md:items-center">
                 {/* Preview */}
@@ -110,9 +120,7 @@ export default function ToolsPage() {
                     </span>
                   </div>
 
-                  <p className="mt-3 text-sm leading-relaxed text-white/70">
-                    {t.desc}
-                  </p>
+                  <p className="mt-3 text-sm leading-relaxed text-white/70">{t.desc}</p>
 
                   <ul className="mt-4 space-y-2 text-sm text-white/70">
                     {t.bullets.map((b, i) => (
@@ -140,21 +148,9 @@ export default function ToolsPage() {
                         Coming soon
                       </button>
                     )}
-
-                    <a
-                      href="/"
-                      className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm text-white/80 hover:bg-white/10 transition"
-                    >
-                      Back to Home
-                    </a>
                   </div>
 
-                  {t.live && (
-                    <p className="mt-3 text-xs text-white/50">
-                    Live.
-                    </p>
-                    )}
-                
+                  {t.live && <p className="mt-3 text-xs text-white/50">Live.</p>}
                 </div>
               </div>
             </section>
@@ -162,9 +158,7 @@ export default function ToolsPage() {
         </div>
 
         {/* Footer note */}
-        <div className="mt-10 text-xs text-white/40">
-          Created by Human powered by AI.
-        </div>
+        <div className="mt-10 text-xs text-white/40">Created by Human powered by AI.</div>
       </div>
     </main>
   );
