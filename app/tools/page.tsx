@@ -150,9 +150,7 @@ export default function ToolsPage() {
                   </div>
 
                   {t.live && (
-                    <p className="mt-3 text-xs text-white/50">
-                      Private testing mode: you control access until launch.
-                    </p>
+                   
                   )}
                 </div>
               </div>
@@ -162,8 +160,7 @@ export default function ToolsPage() {
 
         {/* Footer note */}
         <div className="mt-10 text-xs text-white/40">
-          Tip: You can keep this as a “preview hub” while tools are still being
-          tested. When you launch, just enable the real links.
+          Created by Human powered by AI.
         </div>
       </div>
     </main>
