@@ -151,7 +151,7 @@ export default function ToolsPage() {
 
                   {t.live && (
                     <p className="mt-3 text-xs text-white/50">
-                    Private testing mode: you control access until launch.
+                    Live.
                     </p>
                     )}
                 
