@@ -26,7 +26,7 @@ export async function POST(req: Request) {
 
   const safeUser = { id: user.id, email: user.email, name: user.name };
   const token = signSession(safeUser);
-  setSessionCookie(token);
+  await setSessionCookie(token);
 
   return NextResponse.json({ ok: true, user: safeUser });
 }

@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import * as jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 
 const COOKIE_NAME = "morphai_session";
@@ -10,8 +10,9 @@ export function signSession(user: SessionUser) {
   return jwt.sign({ user }, secret, { expiresIn: "7d" });
 }
 
-export function setSessionCookie(token: string) {
-  cookies().set(COOKIE_NAME, token, {
+export async function setSessionCookie(token: string) {
+  const jar = await cookies();
+  jar.set(COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -20,19 +21,7 @@ export function setSessionCookie(token: string) {
   });
 }
 
-export function clearSessionCookie() {
-  cookies().set(COOKIE_NAME, "", { path: "/", maxAge: 0 });
-}
-
-export function getSessionUser(): SessionUser | null {
-  const token = cookies().get(COOKIE_NAME)?.value;
-  if (!token) return null;
-
-  try {
-    const secret = process.env.AUTH_SECRET!;
-    const payload = jwt.verify(token, secret) as any;
-    return payload?.user ?? null;
-  } catch {
-    return null;
-  }
+export async function clearSessionCookie() {
+  const jar = await cookies();
+  jar.set(COOKIE_NAME, "", { path: "/", maxAge: 0 });
 }

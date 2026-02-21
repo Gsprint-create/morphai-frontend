@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   });
 
   const token = signSession(user);
-  setSessionCookie(token);
+  await setSessionCookie(token);
 
   return NextResponse.json({ ok: true, user });
 }
