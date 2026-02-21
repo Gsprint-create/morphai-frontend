@@ -9,7 +9,7 @@ const tools = [
     bullets: [
       "Fast single-swap flow",
       "High-quality output (PNG)",
-      "Private testing gate (only you)",
+      
     ],
     href: "/tools/faceswap",
     live: true,
