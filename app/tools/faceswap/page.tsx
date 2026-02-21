@@ -109,6 +109,27 @@ export default function FaceSwapPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  
+  useEffect(() => {
+  const stored = localStorage.getItem("morphai_source_image");
+  if (!stored) return;
+
+  fetch(stored)
+    .then(r => r.blob())
+    .then(blob => {
+      const file = new File([blob], "genix.png", { type: "image/png" });
+
+      setSource({
+        file,
+        url: stored,
+        name: "Genix image",
+        size: blob.size,
+        type: blob.type
+      });
+    });
+
+  localStorage.removeItem("morphai_source_image");
+}, []);
 
   async function onPick(file: File | null, which: "source" | "target") {
     setError(null);
