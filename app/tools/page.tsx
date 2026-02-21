@@ -18,7 +18,7 @@ const tools = [
   {
   key: "genix",
   name: "Genix",
-  status: "Live (Private Test)",
+  status: "Live",
   desc: "Generate an image from a prompt with style presets. Download your result as PNG.",
   bullets: [
     "Prompt + style presets",
