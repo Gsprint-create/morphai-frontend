@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { redirect } from "next/navigation";
+import { getUserFromSession } from "@/lib/session";
 
 const tools = [
   {
@@ -56,18 +57,13 @@ function PreviewBlock({ label }: { label: string }) {
   );
 }
 
-export default function ToolsPage() {
-  const [loggingOut, setLoggingOut] = useState(false);
+export default async function ToolsPage() {
 
-  async function logout() {
-    if (loggingOut) return;
-    setLoggingOut(true);
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      window.location.href = "/auth/login";
-    } finally {
-      setLoggingOut(false);
-    }
+  const user = await getUserFromSession();
+
+  if (!user) {
+    redirect("/auth/login");
+   }
   }
 
   return (
