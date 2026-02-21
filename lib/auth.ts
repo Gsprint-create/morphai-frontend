@@ -24,13 +24,14 @@ export function verifySession(token: string): { user: SessionUser } | null {
   }
 }
 
+/** ✅ Read session user from cookie (server-side) */
 export function getSessionUser(): SessionUser | null {
   const token = cookies().get(COOKIE_NAME)?.value;
   if (!token) return null;
   return verifySession(token)?.user ?? null;
 }
 
-// ✅ SET cookie on NextResponse
+/** ✅ Set cookie on NextResponse */
 export function setSessionCookie(res: NextResponse, token: string) {
   res.cookies.set(COOKIE_NAME, token, {
     httpOnly: true,
@@ -41,7 +42,7 @@ export function setSessionCookie(res: NextResponse, token: string) {
   });
 }
 
-// ✅ CLEAR cookie on NextResponse
+/** ✅ Clear cookie on NextResponse */
 export function clearSessionCookie(res: NextResponse) {
   res.cookies.set(COOKIE_NAME, "", {
     httpOnly: true,
@@ -50,13 +51,4 @@ export function clearSessionCookie(res: NextResponse) {
     path: "/",
     maxAge: 0,
   });
-}
-
-/**
- * ✅ READ cookie (read-only cookies() is fine)
- */
-export function getSessionUser(): SessionUser | null {
-  const token = cookies().get(COOKIE_NAME)?.value;
-  if (!token) return null;
-  return verifySession(token)?.user ?? null;
 }
