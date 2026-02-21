@@ -23,7 +23,7 @@ const tools = [
   bullets: [
     "Prompt + style presets",
     "High-quality PNG output",
-    "Private testing gate (only you)",
+    
   ],
   href: "/tools/genix",
   live: true,
