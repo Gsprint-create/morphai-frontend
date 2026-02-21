@@ -1,36 +1,38 @@
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
+import type { NextResponse } from "next/server";
 
 const COOKIE_NAME = "morphai_session";
 
 export type SessionUser = { id: string; email: string; name?: string | null };
 
 function getSecret() {
-  // Use JWT_SECRET as your single source of truth (matches Vercel env var)
   const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error("Server misconfigured: JWT_SECRET missing.");
-  }
+  if (!secret) throw new Error("Server misconfigured: JWT_SECRET missing.");
   return secret;
 }
 
 export function signSession(user: SessionUser) {
-  const secret = getSecret();
-  return jwt.sign({ user }, secret, { expiresIn: "7d" });
+  return jwt.sign({ user }, getSecret(), { expiresIn: "7d" });
 }
 
 export function verifySession(token: string): { user: SessionUser } | null {
   try {
-    const secret = getSecret();
-    return jwt.verify(token, secret) as any;
+    return jwt.verify(token, getSecret()) as any;
   } catch {
     return null;
   }
 }
 
-export function setSessionCookie(token: string) {
-  const jar = cookies(); // ✅ NOT async in Next App Router
-  jar.set(COOKIE_NAME, token, {
+export function getSessionUser(): SessionUser | null {
+  const token = cookies().get(COOKIE_NAME)?.value;
+  if (!token) return null;
+  return verifySession(token)?.user ?? null;
+}
+
+// ✅ SET cookie on NextResponse
+export function setSessionCookie(res: NextResponse, token: string) {
+  res.cookies.set(COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -39,9 +41,9 @@ export function setSessionCookie(token: string) {
   });
 }
 
-export function clearSessionCookie() {
-  const jar = cookies();
-  jar.set(COOKIE_NAME, "", {
+// ✅ CLEAR cookie on NextResponse
+export function clearSessionCookie(res: NextResponse) {
+  res.cookies.set(COOKIE_NAME, "", {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -50,11 +52,11 @@ export function clearSessionCookie() {
   });
 }
 
+/**
+ * ✅ READ cookie (read-only cookies() is fine)
+ */
 export function getSessionUser(): SessionUser | null {
-  const jar = cookies();
-  const token = jar.get(COOKIE_NAME)?.value;
+  const token = cookies().get(COOKIE_NAME)?.value;
   if (!token) return null;
-
-  const payload = verifySession(token);
-  return payload?.user ?? null;
+  return verifySession(token)?.user ?? null;
 }
