@@ -150,8 +150,7 @@ export default function ToolsPage() {
                   </div>
 
                   {t.live && (
-                   
-                  </
+                  </>
                 </div>
               </div>
             </section>
