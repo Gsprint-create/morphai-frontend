@@ -4,7 +4,7 @@ const tools = [
   {
     key: "faceswap",
     name: "FaceSwap",
-    status: "Live (Private Test)",
+    status: "Live",
     desc: "Swap faces with a clean workflow: upload source + target, get a result you can download.",
     bullets: [
       "Fast single-swap flow",
