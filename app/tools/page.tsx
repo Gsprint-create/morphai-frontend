@@ -22,13 +22,13 @@ const tools = [
     gradient: "from-purple-500/20 via-fuchsia-400/10 to-transparent",
   },
   {
-    key: "video",
-    name: "Video Tools",
-    status: "Coming soon",
+    key: "vidx",
+    name: "VidX",
+    status: "Live",
     desc: "Video-focused creation tools that plug into the same MorphAI hub.",
     bullets: ["Simple workflows", "Creator-first UI", "More tools soon"],
     href: "#",
-    live: false,
+    live: true,
     gradient: "from-emerald-500/20 via-teal-400/10 to-transparent",
   },
 ];
@@ -45,9 +45,9 @@ function PreviewBlock({ label }: { label: string }) {
       {/* Placeholder content */}
       <div className="relative flex h-full items-center justify-center p-6">
         <div className="text-center">
-          <div className="text-xs font-semibold tracking-wide text-white/60">PREVIEW</div>
+          <div className="text-xs font-semibold tracking-wide text-white/60"></div>
           <div className="mt-2 text-sm text-white/80">{label}</div>
-          <div className="mt-1 text-xs text-white/50">(placeholder image)</div>
+          <div className="mt-1 text-xs text-white/50"></div>
         </div>
       </div>
     </div>
@@ -145,9 +145,9 @@ export default function ToolsPage() {
                       <button
                         disabled
                         className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white/40"
-                        title="Coming soon"
+                        title="Open Vidx"
                       >
-                        Coming soon
+                        Live
                       </button>
                     )}
                   </div>
