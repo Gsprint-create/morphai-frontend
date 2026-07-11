@@ -1,8 +1,5 @@
 "use client";
 
-<<<<<<< HEAD
-import { useEffect, useMemo, useRef, useState } from "react";
-=======
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 
 type ApiErrorDetail = {
@@ -63,26 +60,18 @@ async function readJsonSafely<T>(response: Response): Promise<T> {
     return {} as T;
   }
 }
->>>>>>> 536deb9 (Fix VidX upload and generation flow)
 
 export default function VideoPage() {
   const API_BASE =
     process.env.NEXT_PUBLIC_VIDEO_API_URL || "http://127.0.0.1:5000";
 
-<<<<<<< HEAD
-  const [imageUrl, setImageUrl] = useState("");
-=======
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
 
->>>>>>> 536deb9 (Fix VidX upload and generation flow)
   const [prompt, setPrompt] = useState("");
   const [negativePrompt, setNegativePrompt] = useState("");
 
   const [seconds, setSeconds] = useState(5);
-<<<<<<< HEAD
-  const [fps, setFps] =
-=======
   const [fps, setFps] = useState(24);
 
   const [jobId, setJobId] = useState("");
@@ -356,4 +345,3 @@ export default function VideoPage() {
     </div>
   );
 }
->>>>>>> 536deb9 (Fix VidX upload and generation flow)
