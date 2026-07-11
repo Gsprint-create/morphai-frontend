@@ -11,6 +11,4 @@ export default function VideoPage() {
   const [negativePrompt, setNegativePrompt] = useState("");
 
   const [seconds, setSeconds] = useState(5);
-  const [fps, setFps] = useState(24);
-
-  const [jobId, setJobId
+  const [fps, setFps] =
