@@ -27,7 +27,7 @@ const tools = [
     status: "Live",
     desc: "Video-focused creation tools that plug into the same MorphAI hub.",
     bullets: ["Simple workflows", "Creator-first UI", "More tools soon"],
-    href: "#",
+    href: "/tools/video",
     live: true,
     gradient: "from-emerald-500/20 via-teal-400/10 to-transparent",
   },
