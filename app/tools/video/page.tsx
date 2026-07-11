@@ -63,7 +63,7 @@ async function readJsonSafely<T>(response: Response): Promise<T> {
 
 export default function VideoPage() {
   const API_BASE =
-    process.env.NEXT_PUBLIC_VIDEO_API_URL || "http://127.0.0.1:5000";
+    process.env.NEXT_PUBLIC_VIDEO_API_URL || "https://morphai-production-9b8f.up.railway.app";
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
